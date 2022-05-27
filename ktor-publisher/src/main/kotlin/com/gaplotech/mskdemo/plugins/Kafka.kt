@@ -61,7 +61,6 @@ fun Application.bootstrapKafkaStream(
                 webSocketActor.send(ProtobufMessageWSAEnvelop(value.toWebSocketResponse()))
             }
         }
-        flow<Int> {  }
 
         stream(
             slidingTwentyFourHourTopic,
