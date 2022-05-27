@@ -1,3 +1,6 @@
+# Create Topic
+This script will first delete all the existing kafka topics and create new topics for demo.
+
 ## Getting Started (Local)
 
 1. use intellij ultimate to open this folder
