@@ -1,0 +1,48 @@
+syntax = "proto3";
+package gaplotech.mskdemo;
+option java_package = "com.gaplotech.mskdemo.pb";
+
+enum Side {
+  BUY = 0;
+  SELL = 1;
+}
+
+message Decimal {
+  int64 unscaled_val = 1;
+  int32 scale = 2;
+}
+
+message OrderExecutionReport {
+  int64 timestamp = 1;
+  int64 order_id = 2;
+  int32 instrument_id = 4;
+  Decimal quantity = 5;
+  Side side = 6;
+  Decimal price = 7;
+}
+
+message CandleStick {
+  int32 instrument_id = 1;
+  Decimal volume = 2;
+  Decimal open = 4;
+  Decimal high = 5;
+  Decimal low = 6;
+  Decimal close = 7;
+  int64 count = 8;
+  int64 start_time = 9;
+  int64 end_time = 10;
+}
+
+message SlidingAggregate {
+  int32 instrument_id = 1;
+  repeated OrderExecutionReport tickers = 2;
+  Decimal volume = 3;
+  Decimal priceChange = 4;
+  Decimal open = 5;
+  Decimal high = 6;
+  Decimal low = 7;
+  Decimal close = 8;
+  int32 count = 9;
+  int64 start_time = 10;
+  int64 end_time = 11;
+}
