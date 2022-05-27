@@ -13,12 +13,5 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
 
-
-## Connect to Bastion
-```bash
-aws ssm start-session --target i-032ba48fa749cfbb1 \
-                       --document-name AWS-StartPortForwardingSession \
-                       --parameters '{"portNumber":["9098"],"localPortNumber":["9098"]}' \
-                       --region 'ap-southeast-1' 
-
-```
+# Resources for learning
+See [here](https://github.com/gaplo917/aws-msk-v2-serverless-demo)

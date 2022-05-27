@@ -1,8 +1,8 @@
-## AWS MSK Serverless Live Demo - Aggregator
+# AWS MSK Serverless Live Demo - Aggregator
 This is a simple Ktor Kolint/JVM sample project to act an **Aggregator** in the 
 [demo](https://github.com/gaplo917/aws-msk-v2-serverless-demo)
 
-### Highlights
+## Highlights
 - Use Kafka Stream to build the aggregations
   - order execution reports -> 1 minute candlestick
   - order execution reports -> 24 hours sliding window trading statistic
@@ -19,11 +19,11 @@ and [extension function](https://kotlinlang.org/docs/extensions.html)
 - order.sliding.aggregate.twentyfourhour (24 hours sliding)
 
 
-### Tumbling Windows
+## Tumbling Windows
 Fixed time window.
 ![](./kafka-stream-agg-windowed.png)
 
-### Sliding Windows
+## Sliding Windows
 We need to have a snapshot of the stream data within the sliding window because when the new data
 comes, we can dynamically calculate the 24h windows and drop unwanted data in the source.
 
@@ -56,6 +56,6 @@ set +o allexport
 -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
 ```
 
-## Resources for learning
+# Resources for learning
 
 See [here](https://github.com/gaplo917/aws-msk-v2-serverless-demo)
