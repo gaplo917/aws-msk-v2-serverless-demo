@@ -2,6 +2,8 @@
 
 This project consist of four projects. Each project has its own documentation in `README.md` 
 
+[Getting started AWS MSK Serverless](https://docs.aws.amazon.com/msk/latest/developerguide/serverless-getting-started.html)
+
 - [Kafka Publisher and WebSocket](ktor-publisher)
 - [Kafka Steam Aggregator](ktor-consumer)
 - [CDK for deployment](cdk)

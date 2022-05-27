@@ -35,7 +35,7 @@ fun Application.configureRouting(
             val orderTime = System.currentTimeMillis()
             val instrumentId = call.parameters["instrumentId"]?.toIntOrNull() ?: 0
             // 3 partition, only
-            if(instrumentId < 0 || instrumentId > 3) {
+            if(instrumentId < 0 || instrumentId > 2) {
                 call.respond(HttpStatusCode.BadRequest, "instrumentId not found")
                 return@get
             }

@@ -18,7 +18,7 @@ class AddSessionWSAEnvelop(override val message: DefaultWebSocketSession): WebSo
 class RemoveSessionWSAEnvelop(override val message: DefaultWebSocketSession): WebSocketActorEnvelop<DefaultWebSocketSession>(message)
 
 fun CoroutineScope.websocketActor(): SendChannel<WebSocketActorEnvelop<*>> = Channel<WebSocketActorEnvelop<*>>().also { channel ->
-    launch(Dispatchers.IO) {
+    launch(Dispatchers.Default) {
         val connections = linkedSetOf<DefaultWebSocketSession>()
         var count = 0
         for (envelop in channel) { // iterate over incoming messages

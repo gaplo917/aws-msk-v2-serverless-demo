@@ -44,7 +44,6 @@ export class VpcStack extends cdk.Stack {
 
         this.fargateSecurityGroup.connections.allowFrom(this.kafkaSecurityGroup, ec2.Port.allTraffic(), "allowFromKafkaToFargate");
         this.fargateSecurityGroup.connections.allowFrom(this.bastionSecurityGroup, ec2.Port.allTraffic(), "allowFromBastionToFargate");
-        this.fargateSecurityGroup.connections.allowFrom(this.kafkaSecurityGroup, ec2.Port.allTraffic(), "allowFromKafkaToFargate");
 
         this.loadBalancerSecurityGroup.addIngressRule(
             ec2.Peer.anyIpv4(),

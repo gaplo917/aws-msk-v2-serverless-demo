@@ -14,23 +14,23 @@ fun main(args: Array<String>) {
 
     val topics = listOf("order.execution.report", "order.candlestick.minute", "order.sliding.aggregate.twentyfourhour")
 
-    try {
-
-        // clear all topics for demo purpose
-        client.deleteTopics(client.listTopics().names().get()).all().get()
-
-        Thread.sleep(2000)
-
-        client.createTopics(
-            topics.map { NewTopic(it, 3, 1) }
-        ).all().get()
-
-    } catch (e: Throwable) {
-        logger.info("unexpected error when creating topic")
-        e.printStackTrace()
-    }
-
-    Thread.sleep(2000)
+//    try {
+//
+//        // clear all topics for demo purpose
+//        client.deleteTopics(client.listTopics().names().get()).all().get()
+//
+//        Thread.sleep(2000)
+//
+//        client.createTopics(
+//            topics.map { NewTopic(it, 3, 1) }
+//        ).all().get()
+//
+//    } catch (e: Throwable) {
+//        logger.info("unexpected error when creating topic")
+//        e.printStackTrace()
+//    }
+//
+//    Thread.sleep(2000)
 
     logger.info("topics: {}", client.listTopics().names().get())
 }

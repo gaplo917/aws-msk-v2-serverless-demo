@@ -68,6 +68,6 @@ fun Decimal.max(that: Decimal): Decimal {
  */
 fun Decimal.min(that: Decimal): Decimal {
     return that.toBigDecimal()
-        .max(toBigDecimal())
+        .min(toBigDecimal())
         .toProtoDecimal()
 }

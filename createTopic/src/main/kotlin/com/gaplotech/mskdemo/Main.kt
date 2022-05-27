@@ -18,7 +18,15 @@ fun main(args: Array<String>) {
         SaslConfigs.SASL_JAAS_CONFIG to "software.amazon.msk.auth.iam.IAMLoginModule required;",
         SaslConfigs.SASL_CLIENT_CALLBACK_HANDLER_CLASS to "software.amazon.msk.auth.iam.IAMClientCallbackHandler",
     ))
-    val topics = listOf("order.execution.report", "order.candlestick.minute", "order.sliding.aggregate.twentyfourhour")
+    val topics = listOf(
+        "order.execution.report",
+        "order.candlestick.minute",
+        "order.sliding.aggregate.twentyfourhour",
+        "com.gaplotech.mskdemo.kafka.stream.writer-KSTREAM-AGGREGATE-STATE-STORE-0000000003-repartition",
+        "com.gaplotech.mskdemo.kafka.stream.writer-KSTREAM-AGGREGATE-STATE-STORE-0000000009-repartition",
+        "com.gaplotech.mskdemo.kafka.stream.writer-KSTREAM-AGGREGATE-STATE-STORE-0000000009-changelog",
+        "com.gaplotech.mskdemo.kafka.stream.writer-KSTREAM-AGGREGATE-STATE-STORE-0000000003-changelog",
+    )
 
     try {
         // clear all topics
@@ -39,3 +47,5 @@ fun main(args: Array<String>) {
 
     logger.info("topics: {}", client.listTopics().names().get())
 }
+
+

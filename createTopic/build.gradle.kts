@@ -16,6 +16,9 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients:3.1.0")
     implementation("software.amazon.msk:aws-msk-iam-auth:1.1.3")
     implementation("org.slf4j:slf4j-log4j12:1.7.36")
+
+    implementation("org.apache.kafka:kafka-clients:3.1.0")
+    implementation("org.apache.kafka:kafka-streams:3.1.0")
     testImplementation(kotlin("test"))
 }
 

@@ -4,7 +4,6 @@ import com.gaplotech.mskdemo.extensions.*
 import com.gaplotech.mskdemo.kafka.KafkaProtoSerde
 import com.gaplotech.mskdemo.pb.MSKDemo
 import com.gaplotech.mskdemo.pb.copy
-import com.google.protobuf.TextFormat
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.application.*
 import org.apache.kafka.common.serialization.Serdes
@@ -31,6 +30,8 @@ fun Application.bootstrapKafkaStream() = thread {
 
     val windowMinuteSize = TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(60))
 
+    logger.info("bootstrap kafka stream for {}, {}, {}", orderExecutionReportsTopic, candleStickPerMinuteTopic, slidingTwentyFourHourTopic)
+
     val topology = StreamsBuilder().apply {
         val reports = stream(
             orderExecutionReportsTopic,
@@ -39,7 +40,7 @@ fun Application.bootstrapKafkaStream() = thread {
                 KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)
             )
         ).peek { key, value ->
-            log.debug("received {}, key:{}, value:{}", orderExecutionReportsTopic, key, TextFormat.shortDebugString(value))
+            logger.info("received {}, key:{}, bytes:{}", orderExecutionReportsTopic, key, value.serializedSize)
         }
 
         // Grouping Ratings
@@ -72,7 +73,7 @@ fun Application.bootstrapKafkaStream() = thread {
         candleSticks
             .toStream()
             .peek { key, value ->
-                log.debug("received {}, key:{}, bytes:{}", candleStickPerMinuteTopic, key, value.serializedSize)
+                logger.info("received {}, key:{}, bytes:{}", candleStickPerMinuteTopic, key, value.serializedSize)
             }
             .to(
                 candleStickPerMinuteTopic,
@@ -85,7 +86,7 @@ fun Application.bootstrapKafkaStream() = thread {
         slidingTwentyFourHour
             .toStream()
             .peek { key, value ->
-                log.debug("received {}, key:{}, bytes:{}", slidingTwentyFourHourTopic, key, value.serializedSize)
+                logger.info("received {}, key:{}, bytes:{}", slidingTwentyFourHourTopic, key, value.serializedSize)
             }
             .to(
                 slidingTwentyFourHourTopic,
@@ -102,14 +103,17 @@ fun Application.bootstrapKafkaStream() = thread {
             putAll(kafkaStreamConfig.toProperties())
             put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
             put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
-            put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0)
         })
 
     val latch = CountDownLatch(1)
 
-    streams.cleanUp()
+    logger.info("kafka stream start")
+
     streams.start()
-    Runtime.getRuntime().addShutdownHook(Thread { streams.close() })
+    Runtime.getRuntime().addShutdownHook(Thread {
+        logger.info("shutting down kafka stream")
+        streams.close()
+    })
     latch.await()
 }
 
