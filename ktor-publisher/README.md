@@ -28,7 +28,7 @@ Websocket ws://localhost:8080/subscription
 ## Local Deploy to AWS Elastic Container Registry
 
 1. rename `.env.example` to `.env`
-2. change the ECR_REGISTRY to your own registry url
+2. change the variables to your own
 
 ```bash
 # export environment variable to shell
@@ -40,7 +40,7 @@ set +o allexport
 -Djib.from.image="amazoncorretto:11" \
 -Djib.to.image="$ECR_REGISTRY/$ECR_REPOSITORY" \
 -Djib.to.credHelper="ecr-login" \
--Djib.to.tags="latest,$TAG" \
+-Djib.to.tags="latest,$IMAGE_TAG" \
 -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
 ```
 

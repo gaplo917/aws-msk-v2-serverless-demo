@@ -52,7 +52,7 @@ set +o allexport
 -Djib.from.image="amazoncorretto:11" \
 -Djib.to.image="$ECR_REGISTRY/$ECR_REPOSITORY" \
 -Djib.to.credHelper="ecr-login" \
--Djib.to.tags="latest,$TAG" \
+-Djib.to.tags="latest,$IMAGE_TAG" \
 -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
 ```
 

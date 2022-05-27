@@ -7,6 +7,7 @@ import {Construct} from 'constructs';
 import {ApplicationLoadBalancer, ApplicationProtocol} from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import {EcrStack} from "./ecr-stack";
 import {kafkaBootstrapAddress} from "./kafka-stack";
+import {Duration} from "aws-cdk-lib";
 
 export class FargateStack extends cdk.Stack {
 
@@ -38,7 +39,7 @@ export class FargateStack extends cdk.Stack {
             internetFacing: true
         });
 
-        new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoFargateService', {
+        const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoFargateService', {
             serviceName: "msk-demo-publisher-service",
             cluster: cluster,
             cpu: 2048,
@@ -48,7 +49,7 @@ export class FargateStack extends cdk.Stack {
             publicLoadBalancer: true,
             loadBalancer: loadBalancer,
             taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(ecrStack.publisherRepo, '0.0.7'),
+                image: ecs.ContainerImage.fromEcrRepository(ecrStack.publisherRepo, '0.0.9'),
                 enableLogging: true,
                 logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-publisher'}),
                 environment: {
@@ -62,6 +63,12 @@ export class FargateStack extends cdk.Stack {
             protocol: ApplicationProtocol.HTTP,
             listenerPort: 80,
             openListener: true,
+        });
+
+        albFargateService.targetGroup.configureHealthCheck({
+            path: "/ping",
+            interval: Duration.seconds(120),
+            unhealthyThresholdCount: 5,
         });
 
         const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'MSKDemoAggregateTask', {
