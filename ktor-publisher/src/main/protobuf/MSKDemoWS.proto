@@ -1,0 +1,28 @@
+syntax = "proto3";
+package gaplotech.mskdemo;
+option java_package = "com.gaplotech.mskdemo.pb";
+
+message CandleStickWebSocketResponse {
+  int32 instrument_id = 1;
+  string volume = 2;
+  string open = 4;
+  string high = 5;
+  string low = 6;
+  string close = 7;
+  int32 count = 8;
+  int64 start_time = 9;
+  int64 end_time = 10;
+}
+
+message SlidingWebSocketResponse {
+  int32 instrument_id = 1;
+  string volume = 2;
+  string priceChange = 3;
+  string open = 4;
+  string high = 5;
+  string low = 6;
+  string close = 7;
+  int32 count = 8;
+  int64 start_time = 9;
+  int64 end_time = 10;
+}

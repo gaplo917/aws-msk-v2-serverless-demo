@@ -1,6 +1,7 @@
 package com.gaplotech.mskdemo.extensions
 
 import com.gaplotech.mskdemo.pb.MSKDemo
+import com.gaplotech.mskdemo.pb.MSKDemoWS
 import com.gaplotech.mskdemo.pb.candleStickWebSocketResponse
 import com.gaplotech.mskdemo.pb.slidingWebSocketResponse
 import com.google.protobuf.Message
@@ -13,7 +14,7 @@ fun Message.toJsonString(): String {
         .print(this)
 }
 
-fun MSKDemo.CandleStick.toWebSocketResponse(): MSKDemo.CandleStickWebSocketResponse {
+fun MSKDemo.CandleStick.toWebSocketResponse(): MSKDemoWS.CandleStickWebSocketResponse {
     val self = this
     return candleStickWebSocketResponse {
         instrumentId = self.instrumentId
@@ -28,7 +29,7 @@ fun MSKDemo.CandleStick.toWebSocketResponse(): MSKDemo.CandleStickWebSocketRespo
     }
 }
 
-fun MSKDemo.SlidingAggregate.toWebSocketResponse(): MSKDemo.SlidingWebSocketResponse {
+fun MSKDemo.SlidingAggregate.toWebSocketResponse(): MSKDemoWS.SlidingWebSocketResponse {
     val self = this
     return slidingWebSocketResponse {
         instrumentId = self.instrumentId

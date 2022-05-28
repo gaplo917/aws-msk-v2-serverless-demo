@@ -4,20 +4,21 @@ import com.gaplotech.mskdemo.extensions.*
 import com.gaplotech.mskdemo.kafka.KafkaProtoSerde
 import com.gaplotech.mskdemo.pb.MSKDemo
 import com.gaplotech.mskdemo.pb.copy
+import com.google.protobuf.Message
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.application.*
 import org.apache.kafka.common.serialization.Serdes
+import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.StreamsConfig
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler
 import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.state.KeyValueStore
+import org.apache.kafka.streams.state.WindowStore
 import java.time.Duration
-import java.util.*
-import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
-@Suppress("RedundantSamConstructor")
 fun Application.bootstrapKafkaStream() = thread {
     val logger = log
     val config = ConfigFactory.load()
@@ -28,66 +29,47 @@ fun Application.bootstrapKafkaStream() = thread {
     val candleStickPerMinuteTopic = kafkaTopicConfig.getString("order.candlestick.minute")
     val slidingTwentyFourHourTopic = kafkaTopicConfig.getString("order.sliding.aggregate.twentyfourhour")
 
-    val windowMinuteSize = TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(60))
+    val candleStickStoreTopic = kafkaTopicConfig.getString("store.order.candlestick.minute.aggregated")
+    val slidingStoreTopic = kafkaTopicConfig.getString("store.order.sliding.aggregate.twentyfourhour")
 
-    logger.info("bootstrap kafka stream for {}, {}, {}", orderExecutionReportsTopic, candleStickPerMinuteTopic, slidingTwentyFourHourTopic)
+    logger.info(
+        "bootstrap kafka stream for {}, {}, {}",
+        orderExecutionReportsTopic,
+        candleStickPerMinuteTopic,
+        slidingTwentyFourHourTopic
+    )
+
+    fun logKeyAndProtoSize(topic: String): ForeachAction<Any, Message> {
+        return ForeachAction { key, value ->
+            logger.info("received {}, key:{}, bytes:{}", topic, key, value.serializedSize)
+        }
+    }
 
     val topology = StreamsBuilder().apply {
-        val reports = stream(
-            orderExecutionReportsTopic,
-            Consumed.with(
-                Serdes.String(),
-                KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)
-            )
-        ).peek { key, value ->
-            logger.info("received {}, key:{}, bytes:{}", orderExecutionReportsTopic, key, value.serializedSize)
-        }
+        val reports = buildReportStream(orderExecutionReportsTopic)
+            .peek(logKeyAndProtoSize(orderExecutionReportsTopic))
 
         // Grouping Ratings
-        val candleSticks = reports
-            .map { _, value ->
-                KeyValue("${value.instrumentId}", value)
-            }
-            .groupByKey(Grouped.with(Serdes.String(), KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)))
-            .windowedBy(windowMinuteSize)
-            .aggregate(
-                Initializer { MSKDemo.CandleStick.newBuilder().build() },
-                Aggregator { _, value, aggregate -> aggregate + value },
-                Materialized.with(Serdes.String(), KafkaProtoSerde(MSKDemo.CandleStick::class.java))
-            )
-        //.suppress(Suppressed.untilWindowCloses(unbounded()))
+        val candleSticks = reports.aggregateToCandleStick(candleStickStoreTopic)
 
-        val slidingTwentyFourHour = reports
-            .map { _, value ->
-                KeyValue("${value.instrumentId}", value)
-            }
-            .groupByKey(Grouped.with(Serdes.String(), KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)))
-            .aggregate(
-                Initializer { MSKDemo.SlidingAggregate.newBuilder().build() },
-                Aggregator { _, value, aggregate -> aggregate + value },
-                Materialized.with(Serdes.String(), KafkaProtoSerde(MSKDemo.SlidingAggregate::class.java))
-            )
-        //.suppress(Suppressed.untilTimeLimit(Duration.ofHours(1), maxRecords(1000)))
+        val slidingTwentyFourHour =
+            reports.aggregateSlidingAggregated(slidingStoreTopic)
 
         // persist to topic
         candleSticks
             .toStream()
-            .peek { key, value ->
-                logger.info("received {}, key:{}, bytes:{}", candleStickPerMinuteTopic, key, value.serializedSize)
-            }
+            .peek(logKeyAndProtoSize(candleStickPerMinuteTopic))
             .to(
                 candleStickPerMinuteTopic,
                 Produced.with(
-                    WindowedSerdes.timeWindowedSerdeFrom(String::class.java, windowMinuteSize.sizeMs),
+                    WindowedSerdes.timeWindowedSerdeFrom(String::class.java, Duration.ofMinutes(1).toMillis()),
                     KafkaProtoSerde(MSKDemo.CandleStick::class.java)
                 )
             )
 
         slidingTwentyFourHour
             .toStream()
-            .peek { key, value ->
-                logger.info("received {}, key:{}, bytes:{}", slidingTwentyFourHourTopic, key, value.serializedSize)
-            }
+            .peek(logKeyAndProtoSize(slidingTwentyFourHourTopic))
             .to(
                 slidingTwentyFourHourTopic,
                 Produced.with(
@@ -95,31 +77,77 @@ fun Application.bootstrapKafkaStream() = thread {
                     KafkaProtoSerde(MSKDemo.SlidingAggregate::class.java)
                 )
             )
-
     }.build()
 
-    val streams = KafkaStreams(topology,
-        Properties().apply {
-            putAll(kafkaStreamConfig.toProperties())
-            put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
-            put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
+    KafkaStreams(topology, kafkaStreamConfig.toProperties()).apply {
+        logger.info("kafka stream start")
+        // always restart the thread in case of error
+        setUncaughtExceptionHandler { e ->
+            logger.error("kafka stream has been crashed", e)
+            StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD
+        }
+        start()
+        Runtime.getRuntime().addShutdownHook(Thread {
+            logger.info("shutting down kafka stream")
+            close()
         })
+    }
+}
 
-    val latch = CountDownLatch(1)
+fun StreamsBuilder.buildReportStream(
+    topic: String
+): KStream<String, MSKDemo.OrderExecutionReport> {
+    return this.stream(
+        topic,
+        Consumed.with(
+            Serdes.String(),
+            KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)
+        )
+    )
+}
 
-    logger.info("kafka stream start")
+fun KStream<String, MSKDemo.OrderExecutionReport>.aggregateToCandleStick(
+    aggregatedTopic: String,
+): KTable<Windowed<String>, MSKDemo.CandleStick> {
 
-    streams.start()
-    Runtime.getRuntime().addShutdownHook(Thread {
-        logger.info("shutting down kafka stream")
-        streams.close()
-    })
-    latch.await()
+    return this
+        .map { _, value ->
+            KeyValue("${value.instrumentId}", value)
+        }
+        .groupByKey(Grouped.with(Serdes.String(), KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)))
+        .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(60)))
+        .aggregate(
+            { MSKDemo.CandleStick.newBuilder().build() },
+            { _, value, aggregate -> aggregate + value },
+            Materialized.`as`<String, MSKDemo.CandleStick, WindowStore<Bytes, ByteArray>>(aggregatedTopic)
+                .withKeySerde(Serdes.String())
+                .withValueSerde(KafkaProtoSerde(MSKDemo.CandleStick::class.java))
+        )
 }
 
 
+fun KStream<String, MSKDemo.OrderExecutionReport>.aggregateSlidingAggregated(
+    aggregatedTopic: String
+): KTable<String, MSKDemo.SlidingAggregate> {
+    return this
+        .map { _, value ->
+            KeyValue("${value.instrumentId}", value)
+        }
+        .groupByKey(Grouped.with(Serdes.String(), KafkaProtoSerde(MSKDemo.OrderExecutionReport::class.java)))
+        .aggregate(
+            { MSKDemo.SlidingAggregate.newBuilder().build() },
+            { _, value, aggregate -> aggregate + value },
+            Materialized.`as`<String, MSKDemo.SlidingAggregate, KeyValueStore<Bytes, ByteArray>>(aggregatedTopic)
+                .withKeySerde(Serdes.String())
+                .withValueSerde(KafkaProtoSerde(MSKDemo.SlidingAggregate::class.java))
+        )
+}
 
-private operator fun MSKDemo.CandleStick.plus(value: MSKDemo.OrderExecutionReport): MSKDemo.CandleStick {
+
+/**
+ * Merge OrderExecutionReport into the running CandleStick
+ */
+operator fun MSKDemo.CandleStick.plus(value: MSKDemo.OrderExecutionReport): MSKDemo.CandleStick {
     return this.toBuilder().apply {
         if (instrumentId == 0) {
             instrumentId = value.instrumentId
@@ -137,23 +165,28 @@ private operator fun MSKDemo.CandleStick.plus(value: MSKDemo.OrderExecutionRepor
     }.build()
 }
 
-private operator fun MSKDemo.SlidingAggregate.plus(value: MSKDemo.OrderExecutionReport): MSKDemo.SlidingAggregate {
+/**
+ * Merge OrderExecutionReport into the running SlidingAggregate
+ */
+operator fun MSKDemo.SlidingAggregate.plus(value: MSKDemo.OrderExecutionReport): MSKDemo.SlidingAggregate {
     return this.toBuilder().apply {
         val mutableTickersList = tickersList.toMutableList()
         mutableTickersList += value
         volume += value.quantity
+        count += 1
 
         val latest = mutableTickersList.last()
-        val windowEnd = latest.timestamp - Duration.ofHours(24).toMillis()
+        val earliestWindow = latest.timestamp - Duration.ofHours(24).toMillis()
+
         val iterator = mutableTickersList.iterator()
         while (iterator.hasNext()) {
             val next = iterator.next()
-            if (next.timestamp < windowEnd) {
+            if (next.timestamp < earliestWindow) {
                 volume -= next.quantity
+                count -= 1
                 iterator.remove()
             }
             // assume the kafka messages are sorted, we can break earlier
-            // P.S. binary search find the index and remove the whole subArray maybe faster
             break
         }
         val earliest = mutableTickersList.first()
@@ -162,7 +195,6 @@ private operator fun MSKDemo.SlidingAggregate.plus(value: MSKDemo.OrderExecution
         close = value.price.copy {}
         high = high.max(value.price)
         low = low.min(value.price)
-        count = mutableTickersList.size
         startTime = earliest.timestamp
         endTime = latest.timestamp
         clearTickers()

@@ -12,6 +12,4 @@ fun Application.configureRouting() {
             call.respondText("Ok")
         }
     }
-    routing {
-    }
 }

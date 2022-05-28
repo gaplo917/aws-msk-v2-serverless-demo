@@ -36,20 +36,22 @@ export class FargateStack extends cdk.Stack {
             loadBalancerName: 'msk-demo-alb',
             vpc: vpcStack.vpc,
             securityGroup: vpcStack.loadBalancerSecurityGroup,
-            internetFacing: true
+            internetFacing: true,
+            idleTimeout: Duration.seconds(600)
         });
 
+        // external facing
         const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoFargateService', {
             serviceName: "msk-demo-publisher-service",
             cluster: cluster,
-            cpu: 4096,
-            memoryLimitMiB: 8192,
+            cpu: 2048,
+            memoryLimitMiB: 4096,
             desiredCount: 1,
             securityGroups: [vpcStack.fargateSecurityGroup],
             publicLoadBalancer: true,
             loadBalancer: loadBalancer,
             taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(ecrStack.publisherRepo, '0.0.11'),
+                image: ecs.ContainerImage.fromEcrRepository(ecrStack.publisherRepo, '0.1.0'),
                 enableLogging: true,
                 logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-publisher'}),
                 environment: {
@@ -71,67 +73,28 @@ export class FargateStack extends cdk.Stack {
             unhealthyThresholdCount: 5,
         });
 
-        // TODO: don't need ALB for internal aggregation task, just want to make sure the demo works at this moment
-        const loadBalancer2 = new ApplicationLoadBalancer(this, 'MSKDemoLBAggregator', {
-            loadBalancerName: 'msk-demo-alb-aggregator',
-            vpc: vpcStack.vpc,
-            securityGroup: vpcStack.loadBalancerSecurityGroup,
-            internetFacing: true
+        // background job without exposing a ALB
+        const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'MSKDemoAggregateTask', {
+            cpu: 2048,
+            memoryLimitMiB: 4096,
+            taskRole: role,
         });
 
-        const albAggregateFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoAggregatorFargateService', {
-            serviceName: "msk-demo-consumer-service",
+        fargateTaskDefinition.addContainer("KtorConsumer", {
+            image: ecs.ContainerImage.fromEcrRepository(ecrStack.consumerRepo, '0.1.0'),
+            logging: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-consumer'}),
+            environment: {
+                'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
+                'REGION': this.region,
+            }
+        });
+
+        new ecs.FargateService(this, 'MSKDemoFargateAggregateService', {
             cluster: cluster,
-            cpu: 4096,
-            memoryLimitMiB: 8192,
-            desiredCount: 1,
+            serviceName: "msk-demo-aggregate-service",
             securityGroups: [vpcStack.fargateSecurityGroup],
-            publicLoadBalancer: true,
-            loadBalancer: loadBalancer2,
-            taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(ecrStack.consumerRepo, '0.0.15'),
-                enableLogging: true,
-                logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-consumer'}),
-                environment: {
-                    'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
-                    'REGION': this.region,
-                },
-                containerPort: 8080,
-                taskRole: role,
-            },
-            targetProtocol: ApplicationProtocol.HTTP,
-            protocol: ApplicationProtocol.HTTP,
-            listenerPort: 80,
-            openListener: true,
+            taskDefinition: fargateTaskDefinition,
+            desiredCount: 1,
         });
-
-        albAggregateFargateService.targetGroup.configureHealthCheck({
-            path: "/ping",
-            interval: Duration.seconds(120),
-            unhealthyThresholdCount: 5,
-        });
-
-        // const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'MSKDemoAggregateTask', {
-        //     cpu: 2048,
-        //     memoryLimitMiB: 4096,
-        //     taskRole: role,
-        // });
-        //
-        // fargateTaskDefinition.addContainer("KtorConsumer", {
-        //     image: ecs.ContainerImage.fromEcrRepository(ecrStack.consumerRepo, '0.0.14'),
-        //     logging: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-consumer'}),
-        //     environment: {
-        //         'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
-        //         'REGION': this.region,
-        //     }
-        // });
-        //
-        // new ecs.FargateService(this, 'MSKDemoFargateAggregateService', {
-        //     cluster: cluster,
-        //     serviceName: "msk-demo-aggregate-service",
-        //     securityGroups: [vpcStack.fargateSecurityGroup],
-        //     taskDefinition: fargateTaskDefinition,
-        //     desiredCount: 1,
-        // });
     }
 }

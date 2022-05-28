@@ -28,7 +28,7 @@ message CandleStick {
   Decimal high = 5;
   Decimal low = 6;
   Decimal close = 7;
-  int64 count = 8;
+  int32 count = 8;
   int64 start_time = 9;
   int64 end_time = 10;
 }
@@ -45,29 +45,4 @@ message SlidingAggregate {
   int32 count = 9;
   int64 start_time = 10;
   int64 end_time = 11;
-}
-
-message CandleStickWebSocketResponse {
-  int32 instrument_id = 1;
-  string volume = 2;
-  string open = 4;
-  string high = 5;
-  string low = 6;
-  string close = 7;
-  int64 count = 8;
-  int64 start_time = 9;
-  int64 end_time = 10;
-}
-
-message SlidingWebSocketResponse {
-  int32 instrument_id = 1;
-  string volume = 2;
-  string priceChange = 3;
-  string open = 4;
-  string high = 5;
-  string low = 6;
-  string close = 7;
-  int32 count = 8;
-  int64 start_time = 9;
-  int64 end_time = 10;
 }

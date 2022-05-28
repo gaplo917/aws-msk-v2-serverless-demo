@@ -38,3 +38,6 @@ out/
 .env
 
 **/generated/**
+
+kafka_2.12-*
+kafka_2.13-*

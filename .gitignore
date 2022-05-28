@@ -40,3 +40,5 @@ out/
 **/generated/**
 
 .DS_Store
+
+kafka_2.13*

@@ -16,6 +16,7 @@ plugins {
     kotlin("jvm") version "1.6.21"
     id("com.google.cloud.tools.jib") version "3.2.1"
     id("com.google.protobuf") version "0.8.18"
+    kotlin("plugin.serialization") version "1.6.21"
 }
 
 group = "com.gaplotech.mskdemo"
@@ -53,6 +54,12 @@ dependencies {
     implementation("io.ktor:ktor-server-websockets:$ktor_version")
     implementation("io.ktor:ktor-server-call-logging:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+
+    // https://ktor.io/docs/serialization.html#add_content_negotiation_dependency
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
+    // Use JSON serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
 
     // kafka clients
     implementation("org.apache.kafka:kafka-clients:$kafka_client_version")

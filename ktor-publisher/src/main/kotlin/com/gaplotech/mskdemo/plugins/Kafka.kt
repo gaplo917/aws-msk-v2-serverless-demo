@@ -11,19 +11,16 @@ import com.gaplotech.mskdemo.pb.MSKDemo.SlidingAggregate
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.application.*
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.StreamsConfig
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler
 import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.WindowedSerdes
 import java.time.Duration
-import java.util.*
-import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 fun Application.buildKafkaProducer(): KafkaProducer<String, MSKDemo.OrderExecutionReport> {
@@ -76,20 +73,18 @@ fun Application.bootstrapKafkaStream(
         }
     }.build()
 
-
-    val streams = KafkaStreams(topology,
-        Properties().apply {
-            putAll(kafkaStreamConfig.toProperties())
-            put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
-            put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String()::class.java)
-            put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0)
+    KafkaStreams(topology, kafkaStreamConfig.toProperties()).apply {
+        logger.info("kafka stream start")
+        // always restart the thread in case of error
+        setUncaughtExceptionHandler { e ->
+            logger.error("kafka stream has been crashed", e)
+            StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD
+        }
+        start()
+        Runtime.getRuntime().addShutdownHook(Thread {
+            logger.info("shutting down kafka stream")
+            close()
         })
-
-    val latch = CountDownLatch(1)
-
-    streams.cleanUp()
-    streams.start()
-    Runtime.getRuntime().addShutdownHook(Thread { streams.close() })
-    latch.await()
+    }
 
 }
