@@ -56,6 +56,9 @@ curl --location --request POST 'http://localhost:8080/createOrder' \
 }'
 ```
 
+You should be able to see the result as following
+![](demo-screenshots.png)
+
 ### Deploy to AWS
 ```
 # install AWS Cloud Development Kit
