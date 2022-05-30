@@ -16,7 +16,7 @@ This project consist of four projects. Each project has its own documentation in
 CONTAINER_SERVICES=('ktor-data-aggregator' 'ktor-producer' 'ktor-websocket')
 for service in ${CONTAINER_SERVICES[@]}; do
     ./$service/gradlew jibDockerBuild \
-    -b ./$service/build.gradle.kts
+    -b ./$service/build.gradle.kts \
     -Djib.from.image="amazoncorretto:11" \
     -Djib.to.image="local-$service" \
     -Djib.to.tags="latest" \
