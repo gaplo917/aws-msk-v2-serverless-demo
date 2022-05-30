@@ -26,3 +26,32 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  local-ktor-websocket:
+    image: local-ktor-websocket:latest
+    container_name: local-ktor-websocket
+    ports:
+      - "9000:9000"
+    depends_on:
+      - broker
+    environment:
+      BOOTSTRAP_ADDRESS: 'broker:9092'
+      JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
+  local-ktor-producer:
+    image: local-ktor-producer:latest
+    container_name: local-ktor-producer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - broker
+    environment:
+      BOOTSTRAP_ADDRESS: 'broker:9092'
+      JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
+
+  local-ktor-data-aggregator:
+    image: local-ktor-data-aggregator:latest
+    container_name: local-ktor-data-aggregator
+    depends_on:
+      - broker
+    environment:
+      BOOTSTRAP_ADDRESS: 'broker:9092'
+      JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf

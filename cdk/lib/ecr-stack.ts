@@ -3,19 +3,25 @@ import * as ecr from "aws-cdk-lib/aws-ecr";
 import {Construct} from "constructs";
 
 export class EcrStack extends cdk.Stack {
-    public publisherRepo: ecr.Repository;
-    public consumerRepo: ecr.Repository;
+    public producerRepo: ecr.Repository;
+    public dataAggregatorRepo: ecr.Repository;
+    public webSocketRepo: ecr.Repository;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        this.publisherRepo = new ecr.Repository(this, 'PublisherEcrRepo', {
-            repositoryName: "msk-demo-ktor-publisher",
+        this.producerRepo = new ecr.Repository(this, 'ProducerEcrRepo', {
+            repositoryName: "msk-demo-ktor-producer",
             imageTagMutability: ecr.TagMutability.MUTABLE
         })
 
-        this.consumerRepo =  new ecr.Repository(this, 'ConsumerEcrRepo', {
-            repositoryName: "msk-demo-ktor-consumer",
+        this.dataAggregatorRepo =  new ecr.Repository(this, 'DataAggregatorEcrRepo', {
+            repositoryName: "msk-demo-ktor-data-aggregator",
+            imageTagMutability: ecr.TagMutability.MUTABLE
+        })
+
+        this.webSocketRepo =  new ecr.Repository(this, 'WebSocketEcrRepo', {
+            repositoryName: "msk-demo-ktor-websocket",
             imageTagMutability: ecr.TagMutability.MUTABLE
         })
     }

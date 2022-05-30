@@ -5,9 +5,9 @@ This project consist of four projects. Each project has its own documentation in
 [Getting started AWS MSK Serverless](https://docs.aws.amazon.com/msk/latest/developerguide/serverless-getting-started.html)
 
 - [Kafka Publisher and WebSocket](ktor-publisher)
-- [Kafka Steam Aggregator](ktor-consumer)
+- [Kafka Steam Aggregator](ktor-data-aggregator)
 - [CDK for deployment](cdk)
-- [Create Kafka topic (demo purpose)](createTopic)
+- [Create Kafka topic (demo purpose)](kafka-topic-scripts)
 
 ## Getting Started (Local Development)
 
@@ -16,8 +16,8 @@ This project consist of four projects. Each project has its own documentation in
 docker-compose up -d
 ```
 Then start the application in the following sequence:
-- [createTopic](createTopic)
-- [ktor-consumer](ktor-consumer)
+- [createTopic](kafka-topic-scripts)
+- [ktor-consumer](ktor-data-aggregator)
 - [ktor-publisher](ktor-publisher)
 
 

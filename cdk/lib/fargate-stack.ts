@@ -32,28 +32,28 @@ export class FargateStack extends cdk.Stack {
             }
         ))
 
-        const loadBalancer = new ApplicationLoadBalancer(this, 'MSKDemoLB', {
-            loadBalancerName: 'msk-demo-alb',
+        const apiLoadBalancer = new ApplicationLoadBalancer(this, 'MSKDemoApiLB', {
+            loadBalancerName: 'msk-demo-api-alb',
             vpc: vpcStack.vpc,
             securityGroup: vpcStack.loadBalancerSecurityGroup,
             internetFacing: true,
-            idleTimeout: Duration.seconds(600)
+            idleTimeout: Duration.seconds(60)
         });
 
         // external facing
-        const albFargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoFargateService', {
-            serviceName: "msk-demo-publisher-service",
+        const albFargateProducerService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoProducerFargateService', {
+            serviceName: "msk-demo-ktor-producer",
             cluster: cluster,
-            cpu: 2048,
-            memoryLimitMiB: 4096,
+            cpu: 1024,
+            memoryLimitMiB: 2048,
             desiredCount: 1,
             securityGroups: [vpcStack.fargateSecurityGroup],
             publicLoadBalancer: true,
-            loadBalancer: loadBalancer,
+            loadBalancer: apiLoadBalancer,
             taskImageOptions: {
-                image: ecs.ContainerImage.fromEcrRepository(ecrStack.publisherRepo, '0.1.0'),
+                image: ecs.ContainerImage.fromEcrRepository(ecrStack.producerRepo, '0.2.0'),
                 enableLogging: true,
-                logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-publisher'}),
+                logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-producer'}),
                 environment: {
                     'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
                     'REGION': this.region,
@@ -67,33 +67,73 @@ export class FargateStack extends cdk.Stack {
             openListener: true,
         });
 
-        albFargateService.targetGroup.configureHealthCheck({
+        albFargateProducerService.targetGroup.configureHealthCheck({
+            path: "/ping",
+            interval: Duration.seconds(120),
+            unhealthyThresholdCount: 5,
+        });
+
+        const wsLoadBalancer = new ApplicationLoadBalancer(this, 'MSKDemoWSLB', {
+            loadBalancerName: 'msk-demo-ws-alb',
+            vpc: vpcStack.vpc,
+            securityGroup: vpcStack.loadBalancerSecurityGroup,
+            internetFacing: true,
+            idleTimeout: Duration.seconds(300)
+        });
+
+        const albFargateWebSocketService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'MSKDemoWebSocketFargateService', {
+            serviceName: "msk-demo-ktor-websocket",
+            cluster: cluster,
+            cpu: 1024,
+            memoryLimitMiB: 2048,
+            desiredCount: 1,
+            securityGroups: [vpcStack.fargateSecurityGroup],
+            publicLoadBalancer: true,
+            loadBalancer: wsLoadBalancer,
+            taskImageOptions: {
+                image: ecs.ContainerImage.fromEcrRepository(ecrStack.webSocketRepo, '0.2.1'),
+                enableLogging: true,
+                logDriver: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-websocket'}),
+                environment: {
+                    'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
+                    'REGION': this.region,
+                },
+                containerPort: 8080,
+                taskRole: role,
+            },
+            targetProtocol: ApplicationProtocol.HTTP,
+            protocol: ApplicationProtocol.HTTP,
+            listenerPort: 80,
+            openListener: true,
+        });
+
+        albFargateWebSocketService.targetGroup.configureHealthCheck({
             path: "/ping",
             interval: Duration.seconds(120),
             unhealthyThresholdCount: 5,
         });
 
         // background job without exposing a ALB
-        const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'MSKDemoAggregateTask', {
+        const dataAggregatorTaskDef = new ecs.FargateTaskDefinition(this, 'MSKDemoDataAggregatorTask', {
             cpu: 2048,
             memoryLimitMiB: 4096,
             taskRole: role,
         });
 
-        fargateTaskDefinition.addContainer("KtorConsumer", {
-            image: ecs.ContainerImage.fromEcrRepository(ecrStack.consumerRepo, '0.1.0'),
-            logging: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-consumer'}),
+        dataAggregatorTaskDef.addContainer("KtorDataAggregator", {
+            image: ecs.ContainerImage.fromEcrRepository(ecrStack.dataAggregatorRepo, '0.2.0'),
+            logging: ecs.LogDrivers.awsLogs({streamPrefix: 'ktor-data-aggregator'}),
             environment: {
                 'BOOTSTRAP_ADDRESS': kafkaBootstrapAddress,
                 'REGION': this.region,
             }
         });
 
-        new ecs.FargateService(this, 'MSKDemoFargateAggregateService', {
+        new ecs.FargateService(this, 'MSKDemoDataAggregatorFargateService', {
             cluster: cluster,
-            serviceName: "msk-demo-aggregate-service",
+            serviceName: "msk-demo-ktor-data-aggregator-service",
             securityGroups: [vpcStack.fargateSecurityGroup],
-            taskDefinition: fargateTaskDefinition,
+            taskDefinition: dataAggregatorTaskDef,
             desiredCount: 1,
         });
     }
