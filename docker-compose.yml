@@ -26,6 +26,23 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  init-kafka-topic-client:
+    image: bitnami/kafka:latest
+    container_name: init-kafka-topic-client
+    depends_on:
+      - broker
+    command: >
+      bash -c '
+        for t in $${TOPICS[@]}; do
+           kafka-topics.sh --bootstrap-server $$BOOTSTRAP_ADDRESS --create --topic $$t --partitions 3
+         done
+        while sleep 60; do echo "nothing happened, just prevent container to stop. global search the whole project with this line to see where it outputs"; done
+      '
+    environment:
+      BOOTSTRAP_ADDRESS: 'broker:29092'
+      TOPICS: private-v1-order-execution-report public-v1-order-candlestick-minute public-v1-order-sliding-aggregate-twentyfourhour dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-candlestick-minute-repartition dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-candlestick-minute-changelog dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-sliding-aggregate-twentyfourhour-repartition dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-sliding-aggregate-twentyfourhour-changelog
+
   local-ktor-websocket:
     image: local-ktor-websocket:latest
     container_name: local-ktor-websocket
@@ -34,8 +51,9 @@ services:
     depends_on:
       - broker
     environment:
-      BOOTSTRAP_ADDRESS: 'broker:9092'
+      BOOTSTRAP_ADDRESS: 'broker:29092'
       JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
+
   local-ktor-producer:
     image: local-ktor-producer:latest
     container_name: local-ktor-producer
@@ -44,7 +62,7 @@ services:
     depends_on:
       - broker
     environment:
-      BOOTSTRAP_ADDRESS: 'broker:9092'
+      BOOTSTRAP_ADDRESS: 'broker:29092'
       JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
 
   local-ktor-data-aggregator:
@@ -53,5 +71,5 @@ services:
     depends_on:
       - broker
     environment:
-      BOOTSTRAP_ADDRESS: 'broker:9092'
+      BOOTSTRAP_ADDRESS: 'broker:29092'
       JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
