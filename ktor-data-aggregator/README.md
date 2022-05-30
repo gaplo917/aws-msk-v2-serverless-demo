@@ -1,4 +1,4 @@
-# AWS MSK Serverless Live Demo - Aggregator
+# AWS MSK Serverless Live Demo - Data Aggregator
 This is a simple Ktor Kolint/JVM sample project to act an **Aggregator** in the 
 [demo](https://github.com/gaplo917/aws-msk-v2-serverless-demo)
 
@@ -12,6 +12,9 @@ and [extension function](https://kotlinlang.org/docs/extensions.html)
   - `operator fun` to ease the source code reading
   - use extension to simplify the source code reading
 
+## Exposed Interface
+
+GET http://localhost:8081/ping
 
 ## Kafka Topics
 - private-v1-order-execution-report
@@ -32,7 +35,7 @@ comes, we can dynamically calculate the 24h windows and drop unwanted data in th
 ## Local Development
 
 1. start the local kafka in docker, See
-2. Just start the arrow in `Application.kt`
+2. Just start the arrow in `DataAggregatorApplication.kt`
    ![](./intelij-ktor-play-button.png)
 3. Add `-Dconfig.file=src/main/resources/application.local.conf` in the "VM options"
    ![](./intelij-ktor-vm-options.png)

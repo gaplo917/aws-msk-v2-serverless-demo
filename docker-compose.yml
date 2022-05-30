@@ -30,6 +30,7 @@ services:
   init-kafka-topic-client:
     image: bitnami/kafka:latest
     container_name: init-kafka-topic-client
+    restart: "no"
     depends_on:
       - broker
     command: >
@@ -37,7 +38,6 @@ services:
         for t in $${TOPICS[@]}; do
            kafka-topics.sh --bootstrap-server $$BOOTSTRAP_ADDRESS --create --topic $$t --partitions 3
          done
-        while sleep 60; do echo "nothing happened, just prevent container to stop. global search the whole project with this line to see where it outputs"; done
       '
     environment:
       BOOTSTRAP_ADDRESS: 'broker:29092'

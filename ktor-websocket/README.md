@@ -1,26 +1,21 @@
-# AWS MSK Serverless Live Demo - Publisher and Websocket
-This is a simple Ktor Kolint/JVM sample project to act a **Publisher & Websocket** in the 
+# AWS MSK Serverless Live Demo - Websocket
+This is a simple Ktor Kolint/JVM sample project to act a **Websocket to stream kafka data** in the 
 [demo](https://github.com/gaplo917/aws-msk-v2-serverless-demo) 
 
 ## Highlights
-- use API to publish a kafka records (easier to generate loading during demo)
 - use websocket to push kafka stream aggregated data to client (real-time data)
 - use Kotlin coroutine feature to handle shared mutable state without context switch in thread, 
 See [the article](https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors).
 
 
-## API
+## Exposed API
 
-GET http://localhost:8080/ping
-
-GET http://localhost:8080/emitOrderExecutionReport/{insturmentId}
-
-Websocket ws://localhost:8080/subscription
+Websocket ws://localhost:9000/subscription
 
 ## Local Development
 
 1. start the local kafka in docker, See 
-2. Just start the arrow in `Application.kt`
+2. Just start the arrow in `WebSocketApplication.kt`
 ![](./intelij-ktor-play-button.png)
 3. Add `-Dconfig.file=src/main/resources/application.local.conf` in the "VM options"
 ![](./intelij-ktor-vm-options.png)
