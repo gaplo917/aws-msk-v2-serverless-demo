@@ -13,6 +13,7 @@ This project consist of four projects. Each project has its own documentation in
 ## Getting Started and Running (Local)
 
 ```bash
+# build the container service to local docker image
 CONTAINER_SERVICES=('ktor-data-aggregator' 'ktor-producer' 'ktor-websocket')
 for service in ${CONTAINER_SERVICES[@]}; do
     ./$service/gradlew jibDockerBuild \
