@@ -43,8 +43,8 @@ services:
       BOOTSTRAP_ADDRESS: 'broker:29092'
       TOPICS: private-v1-order-execution-report public-v1-order-candlestick-minute public-v1-order-sliding-aggregate-twentyfourhour dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-candlestick-minute-repartition dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-candlestick-minute-changelog dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-sliding-aggregate-twentyfourhour-repartition dev-com-gaplotech-mskdemo-ktor-data-aggregator-private-v1-store-order-sliding-aggregate-twentyfourhour-changelog
 
-  local-ktor-websocket:
-    image: local-ktor-websocket:latest
+  ktor-websocket:
+    image: ktor-websocket:latest
     container_name: local-ktor-websocket
     ports:
       - "9000:9000"
@@ -54,8 +54,8 @@ services:
       BOOTSTRAP_ADDRESS: 'broker:29092'
       JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
 
-  local-ktor-producer:
-    image: local-ktor-producer:latest
+  ktor-producer:
+    image: ktor-producer:latest
     container_name: local-ktor-producer
     ports:
       - "8080:8080"
@@ -65,8 +65,8 @@ services:
       BOOTSTRAP_ADDRESS: 'broker:29092'
       JAVA_TOOL_OPTIONS: -Dconfig.file=/app/resources/application.local.conf
 
-  local-ktor-data-aggregator:
-    image: local-ktor-data-aggregator:latest
+  ktor-data-aggregator:
+    image: ktor-data-aggregator:latest
     container_name: local-ktor-data-aggregator
     depends_on:
       - broker

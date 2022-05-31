@@ -91,6 +91,21 @@ protobuf {
     }
 }
 
+jib {
+    from {
+        image = "amazoncorretto:11"
+    }
+    to {
+        image = System.getenv("ECR_REPOSITORY") ?: rootProject.name
+
+        tags = System.getenv("IMAGE_TAG")
+            ?.let { setOf(it) }
+            ?: setOf("latest", version.toString())
+    }
+    container {
+        creationTime = "USE_CURRENT_TIMESTAMP"
+    }
+}
 
 tasks.withType<JibTask> {
     dependsOn("build")

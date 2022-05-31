@@ -12,40 +12,53 @@ This project consist of four projects. Each project has its own documentation in
 
 ## Getting Started and Running (Local)
 
+Step 1: Build the container services to local docker image
 ```bash
-# build the container service to local docker image
-CONTAINER_SERVICES=('ktor-data-aggregator' 'ktor-producer' 'ktor-websocket')
-for service in ${CONTAINER_SERVICES[@]}; do
-    ./$service/gradlew jibDockerBuild \
-    -b ./$service/build.gradle.kts \
-    -Djib.from.image="amazoncorretto:11" \
-    -Djib.to.image="local-$service" \
-    -Djib.to.tags="latest" \
-    -Djib.container.creationTime=USE_CURRENT_TIMESTAMP 
-done
+# build the producer
+./ktor-producer/gradlew jibDockerBuild -p ktor-producer
 
+# build the data aggregator
+./ktor-data-aggregator/gradlew jibDockerBuild -p ktor-data-aggregator
+
+# build the websocket
+./ktor-websocket/gradlew jibDockerBuild -p ktor-websocket
+```
+
+Step 2: Start the Zookeeper and Kafka in daemon 
+```bash
 # init the zookeeper, kafka in background
 docker-compose up -d zookeeper broker
-
-# init the zookeeper, kafka, kafka topics
-docker-compose up init-kafka-topic-client
-
-# after all topics created,
-# boot up the rest ktor-data-aggregator, ktor-producer, ktor-websocket
-docker-compose up local-ktor-data-aggregator local-ktor-producer local-ktor-websocket
-
 ``` 
 
-Test it locally
+Step 3: Create topics in Kafka
 ```bash
-# then open the other terminal 
+# init the zookeeper, kafka, kafka topics
+docker-compose up init-kafka-topic-client
+```
+
+Step 4: Run the backend services
+```bash
+# after all topics created,
+# boot up the rest ktor-data-aggregator, ktor-producer, ktor-websocket
+docker-compose up ktor-data-aggregator ktor-producer ktor-websocket
+``` 
+
+Step 5: Install and connect WebSocket CLI clients to test it locally
+
+Open the other terminal window
+```bash
 # install wscat (WebSocket CLI client)
 npm install -g wscat
 
 # connect to websocket
 wscat --connect ws://localhost:9000/subscription
 
-# then open the other terminal
+```
+
+Step 6: Create an order to producer
+
+Open the other terminal window
+```bash
 # produce one data record (create order)
 curl --location --request POST 'http://localhost:8080/createOrder' \
 --header 'Content-Type: application/json' \
@@ -60,8 +73,8 @@ curl --location --request POST 'http://localhost:8080/createOrder' \
 You should be able to see the result as following
 ![](demo-screenshots.png)
 
-### Deploy to AWS
-```
+## Deploy to AWS
+```bash
 # install AWS Cloud Development Kit
 nvm install 16
 nvm use 16
@@ -72,10 +85,10 @@ cd cdk
 cdk deploy EcrStack
 cdk deploy VpcStack
 
-# mannually create AWS MSK Serverless, because cdk don't support it yet. https://github.com/aws/aws-cdk/issues/20362
+# manually create AWS MSK Serverless, because cdk don't support it yet. https://github.com/aws/aws-cdk/issues/20362
+# TBC a aws-cli to create AWS MSK Serverless
 
 # build application docker image, follows the documentation of each repo
-
 cdk deploy FargateStack
 ```
 
