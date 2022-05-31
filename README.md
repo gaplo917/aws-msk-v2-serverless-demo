@@ -45,7 +45,7 @@ docker-compose up ktor-data-aggregator ktor-producer ktor-websocket
 
 Step 5: Install and connect WebSocket CLI clients to test it locally
 
-Open the other terminal window
+Open a new terminal window
 ```bash
 # install wscat (WebSocket CLI client)
 npm install -g wscat
@@ -55,9 +55,9 @@ wscat --connect ws://localhost:9000/subscription
 
 ```
 
-Step 6: Create an order to producer
+Step 6: Create an order
 
-Open the other terminal window
+Open a new terminal window
 ```bash
 # produce one data record (create order)
 curl --location --request POST 'http://localhost:8080/createOrder' \
@@ -70,8 +70,19 @@ curl --location --request POST 'http://localhost:8080/createOrder' \
 }'
 ```
 
+## Expected Result
 You should be able to see the result as following
 ![](demo-screenshots.png)
+
+## Exposed API
+- Producer Application
+  - http://localhost:8080/ping
+  - http://localhost:9000/createOrder
+- WebSocket
+  - http://localhost:9000/ping
+  - ws://localhost:9000/subscription
+- Data Aggregator Application
+    - http://localhost:8081/ping
 
 ## Deploy to AWS
 ```bash
