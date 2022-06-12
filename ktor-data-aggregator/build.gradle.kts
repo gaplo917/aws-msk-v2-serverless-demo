@@ -91,9 +91,9 @@ jib {
         image = "amazoncorretto:11"
     }
     to {
-        image = System.getenv("ECR_REPOSITORY") ?: rootProject.name
+        image = System.getenv("IMAGE_NAME") ?: rootProject.name
 
-        tags = System.getenv("IMAGE_TAG")
+        tags = System.getenv("IMAGE_TAGS")
             ?.let { setOf(it) }
             ?: setOf("latest", version.toString())
     }

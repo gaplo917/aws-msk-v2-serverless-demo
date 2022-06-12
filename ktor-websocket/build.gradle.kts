@@ -91,11 +91,15 @@ jib {
         image = "amazoncorretto:11"
     }
     to {
-        image = System.getenv("ECR_REPOSITORY") ?: rootProject.name
+        val imageReg = System.getenv("IMAGE_REGISTRY")
+        val imageRepo = System.getenv("IMAGE_NAME") ?: rootProject.name
+        val imageTags = System.getenv("IMAGE_TAGS")
+            ?.split(",")
+            ?.toSet()
 
-        tags = System.getenv("IMAGE_TAG")
-            ?.let { setOf(it) }
-            ?: setOf("latest", version.toString())
+        image = listOfNotNull(imageReg, imageRepo).joinToString { "/" }
+
+        tags = imageTags ?: setOf("latest", version.toString())
     }
     container {
         creationTime = "USE_CURRENT_TIMESTAMP"

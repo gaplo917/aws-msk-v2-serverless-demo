@@ -21,11 +21,8 @@ POST http://localhost:8080/createOrder
 
 ## Local Build Docker Image
 ```bash
-./gradlew jibDockerBuild \
--Djib.from.image="amazoncorretto:11" \
--Djib.to.image="local-ktor-producer" \
--Djib.to.tags="latest" \
--Djib.container.creationTime=USE_CURRENT_TIMESTAMP 
+# build a image call ktor-producer:latest
+./gradlew jibDockerBuild
 ```
 
 ## Local Deploy to AWS Elastic Container Registry
@@ -41,9 +38,9 @@ set +o allexport
 
 ./gradlew jib \
 -Djib.from.image="amazoncorretto:11" \
--Djib.to.image="$ECR_REGISTRY/$ECR_REPOSITORY" \
+-Djib.to.image="$IMAGE_REGISTRY/$IMAGE_NAME" \
 -Djib.to.credHelper="ecr-login" \
--Djib.to.tags="latest,$IMAGE_TAG" \
+-Djib.to.tags="latest,$IMAGE_TAGS" \
 -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
 ```
 

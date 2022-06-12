@@ -11,7 +11,7 @@ See [the article](https://kotlinlang.org/docs/shared-mutable-state-and-concurren
 ## Exposed API
 
 Websocket ws://localhost:9000/subscription
-
+dd
 ## Local Development
 
 1. start the local kafka in docker, See 
@@ -22,11 +22,8 @@ Websocket ws://localhost:9000/subscription
 
 ## Local Build Docker Image
 ```bash
-./gradlew jibDockerBuild \
--Djib.from.image="amazoncorretto:11" \
--Djib.to.image="local-ktor-websocket" \
--Djib.to.tags="latest" \
--Djib.container.creationTime=USE_CURRENT_TIMESTAMP 
+# build a image call ktor-websocket:latest
+./gradlew jibDockerBuild 
 ```
 
 ## Build Docker Image to AWS Elastic Container Registry
@@ -38,13 +35,13 @@ Websocket ws://localhost:9000/subscription
 # export environment variable to shell
 set -o allexport
 source .env
-set +o allexport
+set +o allexportc
 
 ./gradlew jib \
 -Djib.from.image="amazoncorretto:11" \
--Djib.to.image="$ECR_REGISTRY/$ECR_REPOSITORY" \
+-Djib.to.image="$IMAGE_REGISTRY/$IMAGE_NAME" \
 -Djib.to.credHelper="ecr-login" \
--Djib.to.tags="latest,$IMAGE_TAG" \
+-Djib.to.tags="latest,$IMAGE_TAGS" \
 -Djib.container.creationTime=USE_CURRENT_TIMESTAMP
 ```
 

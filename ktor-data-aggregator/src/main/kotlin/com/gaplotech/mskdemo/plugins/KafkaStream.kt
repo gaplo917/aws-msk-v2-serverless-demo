@@ -3,6 +3,7 @@ package com.gaplotech.mskdemo.plugins
 import com.gaplotech.mskdemo.extensions.*
 import com.gaplotech.mskdemo.kafka.KafkaProtoSerde
 import com.gaplotech.mskdemo.pb.MSKDemo
+import com.gaplotech.mskdemo.pb.MSKDemo.CandleStick
 import com.gaplotech.mskdemo.pb.copy
 import com.google.protobuf.Message
 import com.typesafe.config.ConfigFactory
@@ -11,11 +12,11 @@ import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.KeyValue
+import org.apache.kafka.streams.StoreQueryParameters
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler
 import org.apache.kafka.streams.kstream.*
-import org.apache.kafka.streams.state.KeyValueStore
-import org.apache.kafka.streams.state.WindowStore
+import org.apache.kafka.streams.state.*
 import java.time.Duration
 import kotlin.concurrent.thread
 
